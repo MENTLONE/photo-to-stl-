@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photo to STL — Relief Maker</title>
+<meta name="description" content="Turn a photograph into a downloadable 3D-printable STL heightmap relief. Runs locally in your browser.">
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#121a2c;--panel2:#182238;--line:#293650;--text:#edf3ff;--muted:#9eacc4;--accent:#8cf0d0;--accent2:#76a7ff;--danger:#ffb6a7}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#1a2a42 0,transparent 40%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{max-width:1200px;margin:auto;padding:28px 22px 16px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.brand{display:flex;gap:12px;align-items:center}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#07111b;font-weight:900;font-size:20px}
+h1{font-size:clamp(24px,4vw,36px);line-height:1.1;margin:0;letter-spacing:-.04em}header p{margin:5px 0 0;color:var(--muted)}.tag{font-size:12px;border:1px solid #35534f;color:var(--accent);border-radius:999px;padding:7px 11px;white-space:nowrap}
+main{max-width:1200px;margin:auto;padding:10px 22px 40px}.layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px}.panel{background:rgba(18,26,44,.94);border:1px solid var(--line);border-radius:18px;overflow:hidden}.panel-head{padding:17px 19px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.panel-head h2{font-size:15px;margin:0}.panel-body{padding:18px}.field{margin-bottom:19px}.field:last-child{margin-bottom:0}.labelrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px}.labelrow label{font-weight:650}.value{color:var(--accent);font-variant-numeric:tabular-nums;font-size:13px}.hint{font-size:12px;color:var(--muted);margin-top:5px}input[type=range]{width:100%;accent-color:var(--accent)}input[type=number],select{width:100%;background:#0b1221;color:var(--text);border:1px solid #34435e;border-radius:9px;padding:10px;font:inherit}input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}.checkline{display:flex;align-items:center;gap:9px;color:#d8e1f1}.btn{border:0;border-radius:11px;padding:12px 15px;font:700 14px system-ui;cursor:pointer;transition:transform .12s,opacity .12s}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.4;cursor:not-allowed}.primary{background:var(--accent);color:#07151b;width:100%}.secondary{background:#24334d;color:var(--text);border:1px solid #3a4a67}.upload{border:1.5px dashed #435575;border-radius:13px;padding:22px 14px;text-align:center;background:#0d1526;cursor:pointer;display:block}.upload:hover{border-color:var(--accent)}.upload strong{display:block;margin:7px 0 3px}.upload span{font-size:12px;color:var(--muted)}#fileInput{display:none}.preview-area{padding:16px;display:grid;grid-template-rows:minmax(270px,1fr) auto;gap:14px;min-height:520px}.preview-stage{min-height:300px;border-radius:13px;background:radial-gradient(ellipse at center,#1a2840,#0a1020 72%);border:1px solid #25344e;overflow:hidden;position:relative;display:grid;place-items:center}#preview3d{width:100%;height:100%;min-height:380px;display:block}.empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted);pointer-events:none}.empty .symbol{font-size:45px;opacity:.8}.empty strong{color:var(--text);font-size:17px;margin:9px 0 4px}.preview-tools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.small{font-size:12px;color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.stat{background:#0d1526;border:1px solid #263550;border-radius:11px;padding:11px 13px}.stat span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}.stat strong{font-size:16px;font-variant-numeric:tabular-nums}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.notice{margin-top:16px;border:1px solid #33415a;background:#10192a;border-radius:12px;padding:12px 14px;color:var(--muted);font-size:12px}.notice strong{color:var(--text)}.status{min-height:18px;color:var(--accent);font-size:12px;margin-top:9px}.error{color:var(--danger)}footer{max-width:1200px;margin:auto;padding:0 22px 28px;color:var(--muted);font-size:12px}a{color:var(--accent2)}@media(max-width:850px){.layout{grid-template-columns:1fr}.preview-area{min-height:430px}.preview-stage{min-height:340px}header{align-items:flex-start}.tag{display:none}}@media(max-width:420px){main{padding:8px 12px 28px}header{padding:22px 12px 14px}.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:span 2}.actions{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo">↗</div><div><h1>Photo to STL</h1><p>Turn a picture into a printable 3D relief.</p></div></div><div class="tag">LOCAL · BROWSER-BASED</div></header>
+<main>
+<div class="layout">
+<section class="panel">
+<div class="panel-head"><h2>01 / Image & settings</h2><span class="small">No upload to a server</span></div>
+<div class="panel-body">
+<label class="upload" for="fileInput"><div style="font-size:27px">▧</div><strong id="uploadTitle">Choose a photograph</strong><span id="uploadSub">PNG, JPG, WebP · up to your browser's limits</span></label>
+<input id="fileInput" type="file" accept="image/*">
+<div class="field" style="margin-top:18px"><div class="labelrow"><label for="width">Model width</label><span class="value"><span id="widthVal">100</span> mm</span></div><input id="width" type="range" min="30" max="200" value="100" step="1"><div class="hint">Height follows the photo's aspect ratio.</div></div>
+<div class="field"><div class="labelrow"><label for="relief">Relief height</label><span class="value"><span id="reliefVal">5.0</span> mm</span></div><input id="relief" type="range" min="0.5" max="15" value="5" step="0.5"><div class="hint">Controls how strongly brightness becomes height.</div></div>
+<div class="field"><div class="labelrow"><label for="base">Base thickness</label><span class="value"><span id="baseVal">2.0</span> mm</span></div><input id="base" type="range" min="0.8" max="8" value="2" step="0.2"></div>
+<div class="field"><div class="labelrow"><label for="resolution">Detail / mesh resolution</label><span class="value" id="resolutionVal">160 × 160 max</span></div><input id="resolution" type="range" min="64" max="320" value="160" step="16"><div class="hint">Higher detail creates a larger STL and takes longer to generate.</div></div>
+<div class="field"><div class="labelrow"><label for="contrast">Contrast</label><span class="value"><span id="contrastVal">1.0</span>×</span></div><input id="contrast" type="range" min="0.5" max="2.5" value="1" step="0.1"></div>
+<div class="field"><label class="checkline"><input id="invert" type="checkbox"> Invert height (dark areas raised)</label></div>
+<div class="field"><label class="checkline"><input id="flip" type="checkbox"> Mirror image horizontally</label></div>
+<button id="generate" class="btn primary" disabled>Generate 3D relief</button>
+<div class="status" id="status" role="status">Choose an image to get started.</div>
+</div>
+</section>
+<section class="panel">
+<div class="panel-head"><h2>02 / 3D preview</h2><span class="small">Drag to rotate · scroll to zoom</span></div>
+<div class="preview-area">
+<div class="preview-stage"><canvas id="preview3d"></canvas><div class="empty" id="empty"><div class="symbol">▱</div><strong>Your model will appear here</strong><span>Choose a photo, adjust the relief, then generate.</span></div></div>
+<div class="stats"><div class="stat"><span>Footprint</span><strong id="footprint">—</strong></div><div class="stat"><span>Total thickness</span><strong id="thickness">—</strong></div><div class="stat"><span>Triangles</span><strong id="triangles">—</strong></div></div>
+<div class="actions"><button id="download" class="btn primary" disabled>↓ Download STL</button><button id="resetView" class="btn secondary">Reset view</button></div>
+<div class="small">STL is exported in millimeters. Use your slicer to set printer/material settings.</div>
+</div>
+</section>
+</div>
+<div class="notice"><strong>How it works:</strong> This makes a heightmap relief, not a full 3D reconstruction. Each pixel's brightness becomes a height, so faces, objects and backgrounds won't gain hidden sides. For best results, use a high-contrast image with a clear subject. The photo is processed locally in this browser.</div>
+</main>
+<footer>Free browser tool · STL generation runs on your device · For personal fabrication and experimentation.</footer>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const fileInput=$('fileInput'), canvas=$('preview3d'), status=$('status');
+let image=null, renderer=null, scene=null, camera=null, mesh=null, baseMesh=null, controls=null, stlBlob=null, lastGeometry=null, drag=false, lastX=0,lastY=0, rotX=-0.85,rotZ=-0.25, zoom=1;
+function setStatus(msg,err=false){status.textContent=msg;status.classList.toggle('error',err)}
+function init3D(){
+ if(!window.THREE){setStatus('3D preview library could not load. Check your internet connection and reload.',true);return}
+ renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(canvas.clientWidth,canvas.clientHeight,false);
+ scene=new THREE.Scene(); scene.background=null;
+ camera=new THREE.PerspectiveCamera(35,canvas.clientWidth/canvas.clientHeight,.1,2000); camera.position.set(0,-150,130);
+ scene.add(new THREE.HemisphereLight(0xddeaff,0x243149,2.2));
+ const light=new THREE.DirectionalLight(0xffffff,2.3);light.position.set(-80,-100,160);scene.add(light);
+ const light2=new THREE.DirectionalLight(0x8cf0d0,0.7);light2.position.set(80,50,30);scene.add(light2);
+ const grid=new THREE.GridHelper(220,22,0x3d5577,0x26364e);grid.rotation.x=Math.PI/2;grid.position.z=-1;scene.add(grid);
+ const animate=()=>{requestAnimationFrame(animate);if(mesh){mesh.rotation.x=rotX;mesh.rotation.z=rotZ; if(baseMesh){baseMesh.rotation.x=rotX;baseMesh.rotation.z=rotZ}}renderer.render(scene,camera)};animate();
+ canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});
+ canvas.addEventListener('pointermove',e=>{if(!drag)return;rotZ+=(e.clientX-lastX)*.008;rotX+=(e.clientY-lastY)*.008;lastX=e.clientX;lastY=e.clientY;});
+ canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);
+ canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.55,Math.min(2.5,zoom*(e.deltaY>0?.92:1.08)));fitCamera()},{passive:false});
+ window.addEventListener('resize',resize3D);
+}
+function resize3D(){if(!renderer)return;renderer.setSize(canvas.clientWidth,canvas.clientHeight,false);camera.aspect=canvas.clientWidth/Math.max(1,canvas.clientHeight);camera.updateProjectionMatrix()}
+function fitCamera(){if(!camera)return;camera.position.set(0,-155/zoom,125/zoom);camera.lookAt(0,0,0)}
+function disposeMesh(){if(mesh){scene.remove(mesh);mesh.geometry.dispose();mesh.material.dispose();mesh=null}if(baseMesh){scene.remove(baseMesh);baseMesh.geometry.dispose();baseMesh.material.dispose();baseMesh=null}}
+function updateLabels(){for(const [id,out,fmt] of [['width','widthVal',v=>v],['relief','reliefVal',v=>Number(v).toFixed(1)],['base','baseVal',v=>Number(v).toFixed(1)],['contrast','contrastVal',v=>Number(v).toFixed(1)]])$(out).textContent=fmt($(id).value);$('resolutionVal').textContent=$( 'resolution').value+' × '+$('resolution').value+' max'}
+['width','relief','base','resolution','contrast','invert','flip'].forEach(id=>$(id).addEventListener('input',()=>{updateLabels();if(image)generate()}));
+fileInput.addEventListener('change',e=>{
+ const f=e.target.files&&e.target.files[0];if(!f)return;
+ if(!f.type.startsWith('image/')){setStatus('Please choose an image file.',true);return}
+ const url=URL.createObjectURL(f), img=new Image();
+ img.onload=()=>{image=img;$('uploadTitle').textContent=f.name;$('uploadSub').textContent=img.naturalWidth+' × '+img.naturalHeight+' pixels';$('generate').disabled=false;URL.revokeObjectURL(url);generate()};
+ img.onerror=()=>{URL.revokeObjectURL(url);setStatus('Could not read that image.',true)};
+ img.src=url;
+});
+function buildTriangles(){
+ const max=Number($('resolution').value), aspect=image.naturalWidth/image.naturalHeight;
+ let nx,ny;if(aspect>=1){nx=max;ny=Math.max(2,Math.round(max/aspect))}else{ny=max;nx=Math.max(2,Math.round(max*aspect))}
+ const width=Number($('width').value), height=width/aspect, relief=Number($('relief').value), base=Number($('base').value), contrast=Number($('contrast').value), invert=$('invert').checked, flip=$('flip').checked;
+ const sample=document.createElement('canvas');sample.width=nx;sample.height=ny;const ctx=sample.getContext('2d',{willReadFrequently:true});
+ ctx.save();if(flip){ctx.translate(nx,0);ctx.scale(-1,1)}ctx.drawImage(image,0,0,nx,ny);ctx.restore();
+ const pixels=ctx.getImageData(0,0,nx,ny).data, heights=new Float32Array(nx*ny);
+ for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){const i=(y*nx+x)*4;let lum=(.2126*pixels[i]+.7152*pixels[i+1]+.0722*pixels[i+2])/255;lum=Math.max(0,Math.min(1,(lum-.5)*contrast+.5));if(invert)lum=1-lum;heights[y*nx+x]=base+lum*relief}
+ const verts=[], pushTri=(a,b,c)=>{verts.push(...a,...b,...c)}, p=(x,y,z)=>[x-width/2,height/2-y*height/(ny-1),z];
+ // Top surface; winding faces upward.
+ for(let y=0;y<ny-1;y++)for(let x=0;x<nx-1;x++){const a=p(x,y,heights[y*nx+x]),b=p(x+1,y,heights[y*nx+x+1]),c=p(x,y+1,heights[(y+1)*nx+x]),d=p(x+1,y+1,heights[(y+1)*nx+x+1]);pushTri(a,c,b);pushTri(b,c,d)}
+ // Bottom surface at z=0; reverse winding.
+ const bl=p(0,0,0),br=p(nx-1,0,0),tl=p(0,ny-1,0),tr=p(nx-1,ny-1,0);
+ for(let y=0;y<ny-1;y++)for(let x=0;x<nx-1;x++){const a=p(x,y,0),b=p(x+1,y,0),c=p(x,y+1,0),d=p(x+1,y+1,0);pushTri(a,b,c);pushTri(b,d,c)}
+ // Four edge walls, two triangles per edge segment.
+ for(let x=0;x<nx-1;x++){
+  let a=p(x,0,heights[x]),b=p(x+1,0,heights[x+1]),c=p(x,0,0),d=p(x+1,0,0);pushTri(a,b,c);pushTri(b,d,c);
+  const i1=(ny-1)*nx+x,i2=i1+1;a=p(x,ny-1,heights[i1]);b=p(x+1,ny-1,heights[i2]);c=p(x,ny-1,0);d=p(x+1,ny-1,0);pushTri(a,c,b);pushTri(b,c,d)
+ }
+ for(let y=0;y<ny-1;y++){
+  let i=y*nx,i2=(y+1)*nx;let a=p(0,y,heights[i]),b=p(0,y+1,heights[i2]),c=p(0,y,0),d=p(0,y+1,0);pushTri(a,c,b);pushTri(b,c,d);
+  i=y*nx+nx-1;i2=(y+1)*nx+nx-1;a=p(nx-1,y,heights[i]);b=p(nx-1,y+1,heights[i2]);c=p(nx-1,y,0);d=p(nx-1,y+1,0);pushTri(a,b,c);pushTri(b,d,c)
+ }
+ return {verts,nx,ny,width,height,base,relief};
+}
+function makeBinarySTL(vertices){
+ const triCount=vertices.length/9, buffer=new ArrayBuffer(84+triCount*50), view=new DataView(buffer);
+ const header='Photo to STL relief mesh; units mm';for(let i=0;i<80;i++)view.setUint8(i,i<header.length?header.charCodeAt(i):0);
+ view.setUint32(80,triCount,true);let off=84;
+ for(let i=0;i<vertices.length;i+=9){
+  const ax=vertices[i],ay=vertices[i+1],az=vertices[i+2],bx=vertices[i+3],by=vertices[i+4],bz=vertices[i+5],cx=vertices[i+6],cy=vertices[i+7],cz=vertices[i+8];
+  const ux=bx-ax,uy=by-ay,uz=bz-az,vx=cx-ax,vy=cy-ay,vz=cz-az;
+  let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;const len=Math.hypot(nx,ny,nz)||1;nx/=len;ny/=len;nz/=len;
+  for(const val of [nx,ny,nz,ax,ay,az,bx,by,bz,cx,cy,cz]){view.setFloat32(off,val,true);off+=4}view.setUint16(off,0,true);off+=2;
+ }
+ return new Blob([buffer],{type:'model/stl'});
+}
+function generate(){
+ if(!image)return;
+ if(!window.THREE||!renderer){setStatus('3D preview is unavailable. Check your connection and reload.',true);return}
+ setStatus('Building mesh…');$('generate').disabled=true;
+ setTimeout(()=>{
+ try{
+  const data=buildTriangles(), verts=data.verts;
+  disposeMesh();
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geometry.computeVertexNormals();
+  mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:0x8cf0d0,metalness:.12,roughness:.58,side:THREE.DoubleSide}));scene.add(mesh);
+  // A separate dark base outline is unnecessary; the exported mesh includes all faces.
+  lastGeometry=data;stlBlob=makeBinarySTL(verts);
+  $('empty').style.display='none';$('download').disabled=false;
+  $('footprint').textContent=data.width.toFixed(1)+' × '+data.height.toFixed(1)+' mm';
+  $('thickness').textContent=(data.base+data.relief).toFixed(1)+' mm';
+  $('triangles').textContent=(verts.length/9).toLocaleString();
+  rotX=-0.85;rotZ=-0.25;zoom=1;fitCamera();
+  setStatus('Ready. STL generated locally.');
+ }catch(err){console.error(err);setStatus('Could not generate this model. Try a smaller resolution or image.',true)}
+ finally{$('generate').disabled=false}
+ },30)
+}
+$('generate').addEventListener('click',generate);
+$('download').addEventListener('click',()=>{if(!stlBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(stlBlob);a.download='photo-relief.stl';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500)});
+$('resetView').addEventListener('click',()=>{rotX=-0.85;rotZ=-0.25;zoom=1;fitCamera()});
+updateLabels();
+if(window.THREE)init3D();else setStatus('Loading 3D preview…');
+})();
+</script>
+</body>
+</html>
