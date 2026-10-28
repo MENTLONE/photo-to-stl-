@@ -2,6 +2,9 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Photo to STL — Relief Maker</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1020;--panel:#121a2c;--line:#293650;--text:#edf3ff;--muted:#9eacc4;--accent:#8cf0d0}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:25px}h1{margin:0;font-size:clamp(26px,5vw,40px)}p{color:var(--muted)}.layout{display:grid;grid-template-columns:320px 1fr;gap:18px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}.field{margin:18px 0}.field label{display:flex;justify-content:space-between;font-weight:650;margin-bottom:6px}.val{color:var(--accent)}input[type=range]{width:100%;accent-color:var(--accent)}input[type=file]{width:100%;padding:10px;background:#0b1221;border-radius:10px}button{border:0;border-radius:10px;padding:13px 16px;font-weight:750;cursor:pointer}.primary{background:var(--accent);color:#07151b;width:100%}button:disabled{opacity:.4}canvas{display:block;width:100%;height:340px;object-fit:contain;background:#0a1020;border-radius:12px}.stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.stat{background:#0b1221;border:1px solid var(--line);padding:10px;border-radius:10px;flex:1;min-width:110px}.stat small{display:block;color:var(--muted)}.notice{margin-top:16px;padding:13px;border:1px solid var(--line);border-radius:12px;color:var(--muted);font-size:13px}#status{font-size:13px;color:var(--accent);margin-top:10px}@media(max-width:760px){main{padding:16px}.layout{grid-template-columns:1fr}canvas{height:280px}}
+
+/* Standee and AI 3D modes */
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:20px 0}.feature-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0}.feature-card h2{margin:0 0 6px}.feature-card p{font-size:13px}.feature-card .field{margin:14px 0}.feature-card input[type=text],.feature-card input[type=password],.feature-card input[type=file],.feature-card select{width:100%;padding:10px;background:#0b1221;color:var(--text);border:1px solid var(--line);border-radius:9px}.feature-card input[type=range]{width:100%;accent-color:var(--accent)}.feature-card button{width:100%;margin-top:8px}.feature-card .hint{font-size:12px;color:var(--muted)}.feature-status{font-size:13px;color:var(--accent);margin-top:10px;overflow-wrap:anywhere}.feature-status.error{color:#ffb6a7}.feature-card a{color:var(--accent)}.api-warning{border:1px solid #68552d;background:#211b10;border-radius:10px;padding:10px;font-size:12px;color:#e7d5a7;margin:12px 0}@media(max-width:760px){.feature-grid{grid-template-columns:1fr}.feature-card{padding:15px}}
 </style></head><body><main><h1>Photo to STL</h1><p>Turn a photograph into a 3D-printable heightmap relief — right in your browser.</p><div class="layout"><section class="panel"><h3>01 / Image & settings</h3><div class="field"><label>Choose photograph</label><input id="file" type="file" accept="image/*"></div>
 <div class="field"><label>Model width <span class="val"><span id="wv">100</span> mm</span></label><input id="width" type="range" min="30" max="200" value="100"></div>
 <div class="field"><label>Relief height <span class="val"><span id="rv">5</span> mm</span></label><input id="relief" type="range" min=".5" max="15" step=".5" value="5"></div>
@@ -10,11 +13,116 @@
 <div class="field"><label>Contrast <span class="val"><span id="cv">1.0</span>×</span></label><input id="contrast" type="range" min=".5" max="2.5" step=".1" value="1"></div>
 <div class="field"><label><span><input id="invert" type="checkbox"> Invert height (dark areas raised)</span></label></div>
 <button class="primary" id="make" disabled>Generate 3D relief / STL</button><div id="status">Choose an image to get started.</div></section>
-<section class="panel"><h3>02 / Preview</h3><canvas id="preview" width="800" height="500"></canvas><div class="stats"><div class="stat"><small>Footprint</small><strong id="foot">—</strong></div><div class="stat"><small>Total thickness</small><strong id="thick">—</strong></div><div class="stat"><small>Triangles</small><strong id="tris">—</strong></div></div><button class="primary" id="download" disabled>↓ Download STL</button><p style="font-size:12px">The preview is a 2D heightmap representation. STL exports a closed 3D mesh in millimeters.</p></section></div><div class="notice"><b>What this does:</b> Converts brightness into surface height. It creates a relief, not a full 3D reconstruction of hidden sides. Great for lithophanes, portraits, plaques and decorative panels. Your photo is processed locally; nothing is uploaded. STL generation may take a moment at high resolution.</div></main>
+<section class="panel"><h3>02 / Preview</h3><canvas id="preview" width="800" height="500"></canvas><div class="stats"><div class="stat"><small>Footprint</small><strong id="foot">—</strong></div><div class="stat"><small>Total thickness</small><strong id="thick">—</strong></div><div class="stat"><small>Triangles</small><strong id="tris">—</strong></div></div><button class="primary" id="download" disabled>↓ Download STL</button><p style="font-size:12px">The preview is a 2D heightmap representation. STL exports a closed 3D mesh in millimeters.</p></section></div>
+<section aria-label="Standalone model tools">
+<h1 style="font-size:26px;margin:28px 0 4px">Standalone 3D models</h1>
+<p>Make a freestanding photo standee in your browser, or reconstruct a full 3D model using an external AI service.</p>
+<div class="feature-grid">
+ <section class="feature-card">
+  <h2>🧍 Photo standee</h2>
+  <p>Turn one front-facing photo into a thick, printable silhouette. Best with a plain, evenly colored background. This browser-based tool estimates the background color from the image corners; it is not AI background removal.</p>
+  <div class="field"><label for="standeeFile">Photograph</label><input id="standeeFile" type="file" accept="image/png,image/jpeg,image/webp"></div>
+  <div class="field"><label for="standeeWidth">Model width <span class="val"><span id="standeeWidthVal">100</span> mm</span></label><input id="standeeWidth" type="range" min="40" max="180" value="100"></div>
+  <div class="field"><label for="standeeThick">Thickness <span class="val"><span id="standeeThickVal">4</span> mm</span></label><input id="standeeThick" type="range" min="2" max="10" value="4"></div>
+  <div class="field"><label for="standeeThreshold">Background removal <span class="val"><span id="standeeThresholdVal">48</span></span></label><input id="standeeThreshold" type="range" min="15" max="110" value="48"><div class="hint">Increase if more background remains; decrease if parts of the subject disappear.</div></div>
+  <div class="field"><label for="standeeResolution">Edge detail <span class="val"><span id="standeeResolutionVal">128</span> px max</span></label><input id="standeeResolution" type="range" min="48" max="192" step="16" value="128"></div>
+  <button id="makeStandee" class="primary" disabled>Generate standee STL</button>
+  <button id="downloadStandee" class="secondary" disabled>Download standee STL</button>
+  <div id="standeeStatus" class="feature-status" role="status">Choose a photo to start.</div>
+ </section>
+ <section class="feature-card">
+  <h2>✨ Full 3D reconstruction (AI)</h2>
+  <p>Upload 1–4 photos of the same person or object from different angles. The first photo should be the front view. The AI estimates unseen geometry and can export an STL.</p>
+  <div class="field"><label for="meshyFiles">Photos (1–4 images)</label><input id="meshyFiles" type="file" accept="image/png,image/jpeg,image/webp" multiple><div class="hint">JPG, PNG or WebP; maximum 20 MB per image.</div></div>
+  <div class="field"><label for="meshyKey">Meshy API key</label><input id="meshyKey" type="password" autocomplete="off" placeholder="Paste your own Meshy API key"><div class="hint">Required. Get an API key from <a href="https://www.meshy.ai/" target="_blank" rel="noopener">Meshy</a>.</div></div>
+  <div class="field"><label for="meshyPose">Pose preference</label><select id="meshyPose"><option value="">Let AI decide</option><option value="a-pose">A-pose</option><option value="t-pose">T-pose</option></select></div>
+  <div class="api-warning"><b>External paid service:</b> Meshy processes your photos and may charge credits. Your API key is used only in this page's memory and is not saved, but browser-based API calls may be blocked by CORS. Never paste a key into public source code.</div>
+  <button id="makeFull3D" class="primary">Generate full 3D model</button>
+  <div id="meshyStatus" class="feature-status" role="status">Ready when you add photos and your API key.</div>
+  <a id="meshyDownload" href="#" hidden target="_blank" rel="noopener">Open/download generated STL</a>
+ </section>
+</div>
+<div class="notice"><strong>Important:</strong> A standee is a thick silhouette with a deliberately simplified, pixel-stepped edge; it is not a complete 3D person. Full 3D reconstruction uses an external AI service and can still produce anatomical errors. Inspect every STL in your slicer before printing.</div>
+</section>
+\n<div class="notice"><b>What this does:</b> Converts brightness into surface height. It creates a relief, not a full 3D reconstruction of hidden sides. Great for lithophanes, portraits, plaques and decorative panels. Your photo is processed locally; nothing is uploaded. STL generation may take a moment at high resolution.</div></main>
 <script>
 (()=>{const $=id=>document.getElementById(id);let img=null,blob=null;const cvs=$('preview'),ctx=cvs.getContext('2d');function labels(){[['width','wv'],['relief','rv'],['base','bv'],['quality','qv'],['contrast','cv']].forEach(([a,b])=>$(b).textContent=$(a).value);$('cv').textContent=Number($('contrast').value).toFixed(1)}['width','relief','base','quality','contrast'].forEach(id=>$(id).addEventListener('input',()=>{labels();if(img)generate()}));$('invert').onchange=()=>{if(img)generate()};$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image;im.onload=()=>{img=im;$('make').disabled=false;generate()};im.onerror=()=>status('Could not read image.');im.src=URL.createObjectURL(f)};function generate(){if(!img)return;$('make').disabled=true;$('status').textContent='Generating mesh…';setTimeout(()=>{try{const q=+$('quality').value,aspect=img.width/img.height,nx=aspect>=1?q:Math.max(2,Math.round(q*aspect)),ny=aspect>=1?Math.max(2,Math.round(q/aspect)):q,w=+$('width').value,h=w/aspect,r=+$('relief').value,b=+$('base').value,con=+$('contrast').value,inv=$('invert').checked;const c=document.createElement('canvas');c.width=nx;c.height=ny;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,nx,ny);const pix=x.getImageData(0,0,nx,ny).data,hs=new Float32Array(nx*ny);for(let i=0;i<hs.length;i++){let l=(.2126*pix[i*4]+.7152*pix[i*4+1]+.0722*pix[i*4+2])/255;l=Math.max(0,Math.min(1,(l-.5)*con+.5));if(inv)l=1-l;hs[i]=b+l*r}ctx.clearRect(0,0,cvs.width,cvs.height);ctx.fillStyle='#8cf0d0';const scale=Math.min((cvs.width-30)/nx,(cvs.height-30)/ny);for(let y=0;y<ny;y++)for(let xx=0;xx<nx;xx++){let z=hs[y*nx+xx];ctx.globalAlpha=.25+.75*(z-b)/r;ctx.fillRect((cvs.width-nx*scale)/2+xx*scale,(cvs.height-ny*scale)/2+y*scale,Math.max(1,scale),Math.max(1,scale))}ctx.globalAlpha=1;
 const v=[],P=(xx,y,z)=>[xx*w/(nx-1)-w/2,h/2-y*h/(ny-1),z],tri=(a,bb,d)=>v.push(...a,...bb,...d);for(let y=0;y<ny-1;y++)for(let xx=0;xx<nx-1;xx++){let a=P(xx,y,hs[y*nx+xx]),bb=P(xx+1,y,hs[y*nx+xx+1]),cc=P(xx,y+1,hs[(y+1)*nx+xx]),d=P(xx+1,y+1,hs[(y+1)*nx+xx+1]);tri(a,cc,bb);tri(bb,cc,d);let A=P(xx,y,0),B=P(xx+1,y,0),C=P(xx,y+1,0),D=P(xx+1,y+1,0);tri(A,B,C);tri(B,D,C)}
 for(let xx=0;xx<nx-1;xx++){let a=P(xx,0,hs[xx]),bb=P(xx+1,0,hs[xx+1]),c0=P(xx,0,0),d=P(xx+1,0,0);tri(a,bb,c0);tri(bb,d,c0);let i=(ny-1)*nx+xx,j=i+1;a=P(xx,ny-1,hs[i]);bb=P(xx+1,ny-1,hs[j]);c0=P(xx,ny-1,0);d=P(xx+1,ny-1,0);tri(a,c0,bb);tri(bb,c0,d)}
 for(let y=0;y<ny-1;y++){let i=y*nx,j=(y+1)*nx,a=P(0,y,hs[i]),bb=P(0,y+1,hs[j]),c0=P(0,y,0),d=P(0,y+1,0);tri(a,c0,bb);tri(bb,c0,d);i=y*nx+nx-1;j=(y+1)*nx+nx-1;a=P(nx-1,y,hs[i]);bb=P(nx-1,y+1,hs[j]);c0=P(nx-1,y,0);d=P(nx-1,y+1,0);tri(a,bb,c0);tri(bb,d,c0)}
 const count=v.length/9,buf=new ArrayBuffer(84+count*50),dv=new DataView(buf),head='Photo to STL heightmap';for(let i=0;i<80;i++)dv.setUint8(i,i<head.length?head.charCodeAt(i):0);dv.setUint32(80,count,true);let off=84;for(let i=0;i<v.length;i+=9){const ax=v[i],ay=v[i+1],az=v[i+2],ux=v[i+3]-ax,uy=v[i+4]-ay,uz=v[i+5]-az,vx=v[i+6]-ax,vy=v[i+7]-ay,vz=v[i+8]-az;let nx0=uy*vz-uz*vy,ny0=uz*vx-ux*vz,nz0=ux*vy-uy*vx,len=Math.hypot(nx0,ny0,nz0)||1;for(const z of [nx0/len,ny0/len,nz0/len,v[i],v[i+1],v[i+2],v[i+3],v[i+4],v[i+5],v[i+6],v[i+7],v[i+8]]){dv.setFloat32(off,z,true);off+=4}dv.setUint16(off,0,true);off+=2}blob=new Blob([buf],{type:'model/stl'});$('foot').textContent=w.toFixed(1)+' × '+h.toFixed(1)+' mm';$('thick').textContent=(b+r).toFixed(1)+' mm';$('tris').textContent=count.toLocaleString();$('download').disabled=false;$('status').textContent='Ready — STL created in your browser.'}catch(e){console.error(e);$('status').textContent='Generation failed. Try lowering resolution.'}finally{$('make').disabled=false}},20)}$('make').onclick=generate;$('download').onclick=()=>{if(!blob)return;const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='photo-relief.stl';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};labels()})();
-</script></body></html>
+</script>
+<script>
+(()=> {
+const $=id=>document.getElementById(id);
+let standeeImage=null,standeeBlob=null;
+const setStatus=(id,msg,error=false)=>{const el=$(id);el.textContent=msg;el.classList.toggle('error',error)};
+const labels=[['standeeWidth','standeeWidthVal'],['standeeThick','standeeThickVal'],['standeeThreshold','standeeThresholdVal'],['standeeResolution','standeeResolutionVal']];
+labels.forEach(([a,b])=>$(a).addEventListener('input',()=>{$(b).textContent=$(a).value}));
+$('standeeFile').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;const im=new Image();im.onload=()=>{standeeImage=im;$('makeStandee').disabled=false;setStatus('standeeStatus','Photo loaded. Adjust settings and generate.');};im.onerror=()=>setStatus('standeeStatus','Could not read this image.',true);im.src=URL.createObjectURL(file)});
+function addTri(out,a,b,c){out.push(...a,...b,...c)}
+function buildStandee(){
+ const max=+$('standeeResolution').value, aspect=standeeImage.width/standeeImage.height;
+ const nx=aspect>=1?max:Math.max(2,Math.round(max*aspect)),ny=aspect>=1?Math.max(2,Math.round(max/aspect)):max;
+ const cv=document.createElement('canvas');cv.width=nx;cv.height=ny;const cx=cv.getContext('2d',{willReadFrequently:true});cx.drawImage(standeeImage,0,0,nx,ny);
+ const im=cx.getImageData(0,0,nx,ny).data, cornerIds=[0,(nx-1)*4,((ny-1)*nx)*4,((ny*nx)-1)*4],bg=[0,1,2].map(k=>cornerIds.reduce((s,i)=>s+im[i+k],0)/4);
+ const threshold=+$('standeeThreshold').value,mask=new Uint8Array(nx*ny);
+ for(let y=0;y<ny;y++)for(let x=0;x<nx;x++){const i=(y*nx+x)*4,alpha=im[i+3],dist=Math.hypot(im[i]-bg[0],im[i+1]-bg[1],im[i+2]-bg[2]);mask[y*nx+x]=(alpha>20&&dist>threshold)?1:0}
+ // Fill tiny holes using a simple neighbor majority pass to reduce pinholes.
+ const copy=mask.slice();for(let y=1;y<ny-1;y++)for(let x=1;x<nx-1;x++){let count=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(copy[(y+dy)*nx+x+dx])count++;if(count>=7)mask[y*nx+x]=1}
+ let minX=nx,minY=ny,maxX=0,maxY=0,found=0;for(let y=0;y<ny;y++)for(let x=0;x<nx;x++)if(mask[y*nx+x]){found++;minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y)}
+ if(found<20)throw Error('Could not isolate the subject. Try a plain background or adjust Background removal.');
+ // Crop mask to subject bounds and resample at the selected pixel resolution.
+ const cw=maxX-minX+1,ch=maxY-minY+1,scale=+$('standeeWidth').value/cw,cell=scale,depth=+$('standeeThick').value;
+ const W=cw*cell,H=ch*cell,ox=-W/2,oy=-H/2,verts=[];
+ const p=(x,y,z)=>[ox+x*cell,oy+(ch-y)*cell,z];
+ // Each foreground pixel is a prism. Omit internal walls so the resulting shell is connected and closed.
+ for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){if(!mask[(minY+y)*nx+minX+x])continue;
+  const x0=x,y0=y,x1=x+1,y1=y+1,a=p(x0,y0,depth),b=p(x1,y0,depth),c=p(x0,y1,depth),d=p(x1,y1,depth),A=p(x0,y0,0),B=p(x1,y0,0),C=p(x0,y1,0),D=p(x1,y1,0);
+  addTri(verts,a,c,b);addTri(verts,b,c,d);addTri(verts,A,B,C);addTri(verts,B,D,C);
+  if(x===0||!mask[(minY+y)*nx+minX+x-1]){addTri(verts,A,C,a);addTri(verts,a,C,c)}
+  if(x===cw-1||!mask[(minY+y)*nx+minX+x+1]){addTri(verts,B,b,D);addTri(verts,b,d,D)}
+  if(y===0||!mask[(minY+y-1)*nx+minX+x]){addTri(verts,A,a,B);addTri(verts,a,b,B)}
+  if(y===ch-1||!mask[(minY+y+1)*nx+minX+x]){addTri(verts,C,D,c);addTri(verts,c,D,d)}
+ }
+ // Add a small pedestal at the bottom centre, overlapping the subject to create a stand-up foot.
+ const footW=Math.min(W*.42,30),footH=7,overlap=Math.max(1,cell);
+ const fx0=-footW/2,fx1=footW/2,fy0=oy- footH,fy1=oy+overlap;
+ const f=(x,y,z)=>[x,y,z],aa=f(fx0,fy0,0),bb=f(fx1,fy0,0),cc=f(fx0,fy1,0),dd=f(fx1,fy1,0),aaa=f(fx0,fy0,depth),bbb=f(fx1,fy0,depth),ccc=f(fx0,fy1,depth),ddd=f(fx1,fy1,depth);
+ addTri(verts,aaa,ccc,bbb);addTri(verts,bbb,ccc,ddd);addTri(verts,aa,bb,cc);addTri(verts,bb,dd,cc);
+ addTri(verts,aa,aaa,bb);addTri(verts,aaa,bbb,bb);addTri(verts,cc,dd,ccc);addTri(verts,dd,ddd,ccc);addTri(verts,aa,cc,aaa);addTri(verts,cc,ccc,aaa);addTri(verts,bb,bbb,dd);addTri(verts,bbb,ddd,dd);
+ const count=verts.length/9,buf=new ArrayBuffer(84+count*50),dv=new DataView(buf),header='Photo to STL standee';for(let i=0;i<80;i++)dv.setUint8(i,i<header.length?header.charCodeAt(i):0);dv.setUint32(80,count,true);let off=84;
+ for(let i=0;i<verts.length;i+=9){const ax=verts[i],ay=verts[i+1],az=verts[i+2],ux=verts[i+3]-ax,uy=verts[i+4]-ay,uz=verts[i+5]-az,vx=verts[i+6]-ax,vy=verts[i+7]-ay,vz=verts[i+8]-az;let nx0=uy*vz-uz*vy,ny0=uz*vx-ux*vz,nz0=ux*vy-uy*vx,len=Math.hypot(nx0,ny0,nz0)||1;for(const z of [nx0/len,ny0/len,nz0/len,...verts.slice(i,i+9)]){dv.setFloat32(off,z,true);off+=4}dv.setUint16(off,0,true);off+=2}
+ return {blob:new Blob([buf],{type:'model/stl'}),count,width:W,height:H,depth};
+}
+$('makeStandee').addEventListener('click',()=>{if(!standeeImage)return;$('makeStandee').disabled=true;setStatus('standeeStatus','Building silhouette mesh…');setTimeout(()=>{try{const out=buildStandee();standeeBlob=out.blob;$('downloadStandee').disabled=false;setStatus('standeeStatus','Ready: '+out.count.toLocaleString()+' triangles · approx. '+out.width.toFixed(1)+' × '+out.height.toFixed(1)+' mm · '+out.depth+' mm thick.');}catch(e){setStatus('standeeStatus',e.message||'Could not create standee.',true)}finally{$('makeStandee').disabled=false}},40)});
+$('downloadStandee').addEventListener('click',()=>{if(!standeeBlob)return;const url=URL.createObjectURL(standeeBlob),a=document.createElement('a');a.href=url;a.download='photo-standee.stl';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)});
+function readDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})}
+$('makeFull3D').addEventListener('click',async()=>{
+ const files=Array.from($('meshyFiles').files||[]),key=$('meshyKey').value.trim(),button=$('makeFull3D'),link=$('meshyDownload');link.hidden=true;
+ if(!key){setStatus('meshyStatus','Enter your Meshy API key. The key is not saved by this page.',true);return}
+ if(files.length<1||files.length>4){setStatus('meshyStatus','Select between 1 and 4 photos of the same subject.',true);return}
+ if(files.some(f=>f.size>20*1024*1024)){setStatus('meshyStatus','Each photo must be 20 MB or smaller.',true);return}
+ if(files.some(f=>!/^image\/(jpeg|png|webp)$/.test(f.type))){setStatus('meshyStatus','Use JPG, PNG or WebP images.',true);return}
+ button.disabled=true;
+ try{
+  setStatus('meshyStatus','Reading images in this browser…');
+  const image_urls=await Promise.all(files.map(readDataURL));
+  setStatus('meshyStatus','Submitting images to Meshy AI. This may use paid credits…');
+  const response=await fetch('https://api.meshy.ai/openapi/v1/multi-image-to-3d',{method:'POST',headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({image_urls,ai_model:'meshy-7.1',should_texture:false,pose_mode:$('meshyPose').value,target_formats:['stl']})});
+  if(!response.ok){const msg=await response.text();throw Error('Meshy API returned '+response.status+': '+msg.slice(0,300))}
+  const created=await response.json();if(!created.result)throw Error('Meshy did not return a task ID.');
+  const id=created.result;let task=null;
+  for(let i=0;i<90;i++){await new Promise(r=>setTimeout(r,4000));setStatus('meshyStatus','AI reconstruction in progress… checking task '+(i+1)+' / 90');const poll=await fetch('https://api.meshy.ai/openapi/v1/multi-image-to-3d/'+encodeURIComponent(id),{headers:{'Authorization':'Bearer '+key}});if(!poll.ok)throw Error('Could not check Meshy task ('+poll.status+').');task=await poll.json();if(task.status==='SUCCEEDED'||task.status==='FAILED'||task.status==='CANCELED')break}
+  if(!task||task.status!=='SUCCEEDED'){throw Error(task&&task.task_error&&task.task_error.message?task.task_error.message:'Task did not succeed before timeout. Check your Meshy account and task history.')}
+  if(!task.model_urls||!task.model_urls.stl)throw Error('Meshy finished but did not return an STL. Check the task output in Meshy.');
+  link.href=task.model_urls.stl;link.hidden=false;link.textContent='Open/download generated STL';setStatus('meshyStatus','Model ready! Meshy generated the STL. Use the link below to download it.');
+ }catch(e){
+  const msg=(e&&e.message)||'Unknown error';
+  if(msg.includes('Failed to fetch')||msg.includes('NetworkError')||msg.includes('CORS'))setStatus('meshyStatus','Browser could not reach the Meshy API. This may be a CORS restriction. A small server-side proxy is required for reliable integration; do not put an API key in the public repository.',true);
+  else setStatus('meshyStatus',msg,true);
+ }finally{button.disabled=false}
+});
+})();
+</script>
+</body></html>
