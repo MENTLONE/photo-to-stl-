@@ -59,3 +59,32 @@ The site runs in your browser. The 3D preview library is loaded from a CDN, so a
 ## Repository
 
 Source code and deployment status: https://github.com/MENTLONE/photo-to-stl-
+
+
+## New feature: photo standee
+
+The **Photo standee** tool attempts to remove a plain background by comparing image pixels with the average color of the image corners. It then creates a thick silhouette STL with a small support foot.
+
+1. Use a front-facing photo with a plain, evenly lit background.
+2. Select the photo.
+3. Adjust width, thickness, background-removal threshold, and edge detail.
+4. Generate the standee and download `photo-standee.stl`.
+5. Inspect it in your slicer before printing.
+
+This is a simple browser-based background estimate, not AI segmentation. Busy backgrounds, hair, similar subject/background colors, and shadows can produce poor cutouts. Increase the background-removal threshold if background remains; decrease it if parts of the person disappear. The silhouette edge is pixel-based and may look stepped. The support foot is basic and may need adjustment for your printer or model.
+
+## New feature: full 3D reconstruction from multiple views
+
+The **Full 3D reconstruction (AI)** tool sends 1–4 photographs of the same person or object to the external Meshy multi-image-to-3D API.
+
+1. Create a Meshy account and obtain your own API key from [Meshy](https://www.meshy.ai/).
+2. Select 1–4 JPG, PNG, or WebP images (maximum 20 MB each). Use consistent lighting and show the same subject from different angles. The first image should be the front view.
+3. Paste your Meshy API key into the password field. It is used in page memory only and is not stored by the app.
+4. Choose an optional A-pose or T-pose, then start generation.
+5. Wait for the AI task to finish and use the generated STL link.
+
+**External service, cost, and privacy:** This feature sends selected photos to Meshy's servers. Meshy may require a paid plan or credits; check its current pricing and terms before generating. Never put an API key into source code or commit it to this public repository. Do not use an API key on a shared or untrusted device. The key is not written to local storage by this app.
+
+**Browser integration limitation:** This GitHub Pages version calls the Meshy API directly from the browser. If the browser blocks requests due to CORS, or your account/API configuration prevents browser calls, the full 3D mode will not work from this static page. The reliable solution is a small server-side proxy (for example, a serverless function) that keeps the API key as a server secret; GitHub Pages alone cannot securely store server secrets. Do not expose your private API key to solve a CORS problem.
+
+AI-generated models are estimates and can have missing details, distorted anatomy, or non-manifold geometry. Check the STL in a slicer or mesh-repair tool and verify scale, wall thickness, stability, and supports before printing. A single image cannot reveal the hidden sides; multiple well-spaced views usually help.
